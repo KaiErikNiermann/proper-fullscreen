@@ -15,7 +15,11 @@ updates:
       include: scope
 
   - package-ecosystem: github-actions
-    directory: /
+    # `directory: /` only scans .github/workflows, which silently leaves composite actions
+    # pinned forever. The glob keeps .github/actions/*/action.yml updated too.
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
       interval: weekly
     groups:
