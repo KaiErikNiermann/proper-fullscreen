@@ -18,7 +18,7 @@ jobs:
     name: lint · typecheck · test · build
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
 
       - name: Lint
@@ -45,7 +45,7 @@ jobs:
       - name: Package
         run: pnpm run package
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: proper-fullscreen-unsigned
           path: web-ext-artifacts/*.zip
