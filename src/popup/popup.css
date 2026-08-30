@@ -1,0 +1,59 @@
+:root {
+  --bg: #14161a;
+  --panel: #1b1e24;
+  --line: #2a2f38;
+  --fg: #e6e9ef;
+  --dim: #9aa3b2;
+  --accent: #f2b134;
+  --ok: #7bc96f;
+  --warn: #e5a05a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  width: 330px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.45 Inter, "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+}
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+}
+.site { font-weight: 600; }
+.badge {
+  font-size: 11px; padding: 2px 7px; border-radius: 99px;
+  background: var(--panel); color: var(--dim); border: 1px solid var(--line);
+}
+.badge.drm { color: var(--warn); border-color: #4a3a24; }
+main { padding: 12px 14px 14px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.stat { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.stat b { color: var(--fg); font-weight: 600; }
+fieldset { border: 0; margin: 0; padding: 0; }
+label.opt {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+}
+label.opt:hover { background: var(--panel); }
+label.opt input { margin: 0; accent-color: var(--accent); }
+.opt-label { flex: 0 0 auto; }
+.opt-note { color: var(--dim); font-size: 11px; margin-left: auto; text-align: right; }
+.custom { display: flex; gap: 6px; align-items: center; margin: 8px 0 0 8px; }
+input[type="text"] {
+  flex: 1; background: var(--panel); border: 1px solid var(--line);
+  color: var(--fg); border-radius: 6px; padding: 5px 8px; font: inherit;
+}
+button {
+  background: var(--panel); border: 1px solid var(--line); color: var(--fg);
+  border-radius: 6px; padding: 6px 10px; font: inherit; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--accent); color: #14161a; border-color: var(--accent); font-weight: 600; }
+.switch { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.msg { font-size: 11px; color: var(--dim); margin-top: 10px; min-height: 1.4em; }
+.msg.ok { color: var(--ok); }
+.msg.warn { color: var(--warn); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }

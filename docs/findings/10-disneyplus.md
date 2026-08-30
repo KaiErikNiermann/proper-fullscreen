@@ -82,3 +82,16 @@ the box becomes 2.3886:1 and they collapse to ~0.
   to 16:9 is a property of that ladder; 4K/HEVC ladders are more often encoded at native picture AR.
 - `PICTURE_AR = 2.39` is an assumption here and cannot be verified under DRM. Must come from the
   preset UI.
+
+## CSS-fullscreen / small-window: the clamp must do the work
+
+Later testing in a 1554 x 1073 window (container `.btm-media-client` 1553.9 x 1072.9, **AR 1.4483**
+— far narrower than 16:9) showed side-cropping. The cause was a **fixed** scale of 1.3449 left over
+from the first manual experiment, applied with no container-width clamp:
+
+- picture at fixed 1.3449 -> 2090px wide in a 1553.9px container -> **268px cropped per side**
+- the two-axis solver on the same state -> `sH 1.6501`, `sW 1.0000` -> **scale 1.0**, `boundBy none`
+
+So this is the same failure as YouTube's default mode, and the same fix: never apply a scale derived
+only from `PICTURE_AR / frameAR`. Always clamp by container width and recompute on every layout
+change.

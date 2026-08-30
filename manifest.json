@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Proper Fullscreen",
+  "version": "0.1.0",
+  "description": "Removes baked-in letterbox bars so scope films fill an ultrawide display.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "proper-fullscreen@appulsauce",
+      "strict_min_version": "115.0"
+    }
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.disneyplus.com/*",
+    "*://*.netflix.com/*",
+    "*://*.primevideo.com/*",
+    "*://*.amazon.com/*",
+    "*://*.amazon.de/*",
+    "*://*.amazon.co.uk/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.disneyplus.com/*",
+        "*://*.netflix.com/*",
+        "*://*.primevideo.com/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.co.uk/*"
+      ],
+      "js": [
+        "dist/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_title": "Proper Fullscreen",
+    "default_popup": "dist/popup.html",
+    "default_icon": {
+      "64": "icons/icon.svg"
+    }
+  },
+  "icons": {
+    "64": "icons/icon.svg"
+  }
+}

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "pre-push: lint + typecheck + tests"
+pnpm run lint
+pnpm run typecheck
+pnpm run test
