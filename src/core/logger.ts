@@ -1,7 +1,9 @@
-/** Minimal namespaced logger. Verbose output is opt-in. */
-let enabled = false;
+/**
+ * Minimal namespaced logger. Verbose output is opt-in.
+ */
+const state = { isEnabled: false };
 
-export const setDebug = (v: boolean): void => { enabled = v; };
+export const setDebug = (isEnabled: boolean): void => { state.isEnabled = isEnabled; };
 
 export interface Logger {
   debug: (...a: readonly unknown[]) => void;
@@ -13,7 +15,7 @@ export interface Logger {
 export function makeLogger(scope: string): Logger {
   const tag = `[proper-fullscreen:${scope}]`;
   return {
-    debug: (...a) => { if (enabled) console.debug(tag, ...a); },
+    debug: (...a) => { if (state.isEnabled) console.debug(tag, ...a); },
     info: (...a) => { console.info(tag, ...a); },
     warn: (...a) => { console.warn(tag, ...a); },
     error: (...a) => { console.error(tag, ...a); },

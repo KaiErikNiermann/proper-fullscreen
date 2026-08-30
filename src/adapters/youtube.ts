@@ -1,4 +1,6 @@
-/* YouTube — verified across default / theater / fullscreen. See docs/findings/20-youtube.md */
+/*
+ * YouTube — verified across default / theater / fullscreen. See docs/findings/20-youtube.md
+ */
 import { pickVideo, register } from './registry.ts';
 
 const SEL = 'video.html5-main-video, video.video-stream';

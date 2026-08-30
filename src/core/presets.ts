@@ -1,4 +1,6 @@
-/** Aspect-ratio presets. Shared by the content script and the popup. */
+/**
+ * Aspect-ratio presets. Shared by the content script and the popup.
+ */
 import type { Preset } from './types.ts';
 
 export const PRESETS: readonly Preset[] = Object.freeze([
@@ -23,7 +25,7 @@ export const DEFAULT_AR = DEFAULT_PRESET.ar;
  */
 export function nearest(ar: number): Preset {
   let best = DEFAULT_PRESET;
-  let bestD = Number.POSITIVE_INFINITY;
+  let bestD = Infinity;
   for (const p of PRESETS) {
     const d = Math.abs(Math.log(ar) - Math.log(p.ar));
     if (d < bestD) { bestD = d; best = p; }
@@ -31,7 +33,9 @@ export function nearest(ar: number): Preset {
   return best;
 }
 
-/** Parse `2.39`, `21:9` or `21/9`. Returns null for anything non-positive or unparseable. */
+/**
+ * Parse `2.39`, `21:9` or `21/9`. Returns null for anything non-positive or unparseable.
+ */
 export function parseAR(v: string | number): number | null {
   if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : null;
   const s = v.trim();

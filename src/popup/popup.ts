@@ -7,9 +7,9 @@ import * as settings from '../core/settings.ts';
 import type { Detection, Preset, SiteSettings, Status } from '../core/types.ts';
 
 function need<T extends HTMLElement>(id: string): T {
-  const el = document.getElementById(id);
-  if (!el) throw new Error(`popup: missing #${id}`);
-  return el as T;
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`popup: missing #${id}`);
+  return element as T;
 }
 
 const els = {
@@ -24,8 +24,10 @@ const els = {
   msg: need<HTMLDivElement>('msg'),
 };
 
-let siteId: string | null = null;
-let tabId: number | null = null;
+/*
+ * Single-document script, so its two pieces of mutable state live together.
+ */
+const state: { siteId: string | null; tabId: number | null } = { siteId: null, tabId: null };
 
 const say = (text: string, cls = ''): void => {
   els.msg.textContent = text;
@@ -33,8 +35,8 @@ const say = (text: string, cls = ''): void => {
 };
 
 async function save(patch: Partial<SiteSettings>): Promise<void> {
-  if (siteId === null) return;
-  await settings.set(siteId, patch);
+  if (state.siteId === null) return;
+  await settings.set(state.siteId, patch);
   say('Applied.', 'ok');
   setTimeout(() => { void refreshStatus(); }, 250);
 }
@@ -73,17 +75,17 @@ function renderStat(status: Status): void {
 }
 
 async function refreshStatus(): Promise<void> {
-  if (tabId === null) return;
+  if (state.tabId === null) return;
   let status: Status | undefined;
   try {
-    status = await browser.tabs.sendMessage(tabId, { type: 'pf:status' }) as Status | undefined;
+    status = await browser.tabs.sendMessage(state.tabId, { type: 'pf:status' }) as Status | undefined;
   } catch {
     els.stat.textContent = 'Content script not loaded — reload the page.';
     return;
   }
   if (!status?.adapter) { els.stat.textContent = 'No supported player here.'; return; }
 
-  siteId = status.adapter.id;
+  state.siteId = status.adapter.id;
   els.site.textContent = status.adapter.label;
   els.badge.textContent = status.adapter.drm ? 'DRM' : 'readable';
   els.badge.className = status.adapter.drm ? 'badge drm' : 'badge';
@@ -103,15 +105,17 @@ els.applyCustom.addEventListener('click', () => {
   if (ar === null) { say('Enter a number (2.39) or a ratio (21:9).', 'warn'); return; }
   void save({ pictureAR: ar, source: 'custom' });
 });
-els.customAR.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.applyCustom.click(); });
+els.customAR.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') els.applyCustom.click();
+});
 
 els.detect.addEventListener('click', () => {
   void (async () => {
-    if (tabId === null) return;
+    if (state.tabId === null) return;
     say('Sampling frames…');
     els.detect.disabled = true;
     try {
-      const d = await browser.tabs.sendMessage(tabId, { type: 'pf:detect' }) as Detection | undefined;
+      const d = await browser.tabs.sendMessage(state.tabId, { type: 'pf:detect' }) as Detection | undefined;
       if (!d?.ok) { say(d?.reason ?? 'Detection failed.', 'warn'); return; }
       const near = nearest(d.pictureAR);
       await save({ pictureAR: near.ar, source: `preset:${near.id}` });
@@ -126,6 +130,6 @@ els.detect.addEventListener('click', () => {
 
 void (async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  tabId = tab?.id ?? null;
+  state.tabId = tab?.id ?? null;
   await refreshStatus();
 })();

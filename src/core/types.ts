@@ -1,18 +1,34 @@
-/** Shared domain types. */
+/**
+ * Shared domain types.
+ */
 
-/** Geometry of a player at one instant. All lengths in CSS px. */
+/**
+ * Geometry of a player at one instant. All lengths in CSS px.
+ */
 export interface Layout {
-  /** width of the `overflow:hidden` ancestor that clips */
+  /**
+   * width of the `overflow:hidden` ancestor that clips
+   */
   readonly containerW: number;
-  /** height of that ancestor */
+  /**
+   * height of that ancestor
+   */
   readonly containerH: number;
-  /** UNTRANSFORMED video layout width (offsetWidth) */
+  /**
+   * UNTRANSFORMED video layout width (offsetWidth)
+   */
   readonly boxW: number;
-  /** UNTRANSFORMED video layout height (offsetHeight) */
+  /**
+   * UNTRANSFORMED video layout height (offsetHeight)
+   */
   readonly boxH: number;
-  /** videoWidth / videoHeight — the AR actually decoded */
+  /**
+   * videoWidth / videoHeight — the AR actually decoded
+   */
   readonly frameAR: number;
-  /** AR of the real image inside that frame */
+  /**
+   * AR of the real image inside that frame
+   */
   readonly pictureAR: number;
 }
 
@@ -25,13 +41,19 @@ export interface Solution {
   readonly boundBy: BoundBy;
   readonly pictureW: number;
   readonly pictureH: number;
-  /** black px above/below the picture, per side */
+  /**
+   * black px above/below the picture, per side
+   */
   readonly letterbar: number;
-  /** black px left/right of the picture, per side */
+  /**
+   * black px left/right of the picture, per side
+   */
   readonly pillarbar: number;
 }
 
-/** Result of trying to express a player's own transform so ours can compose with it. */
+/**
+ * Result of trying to express a player's own transform so ours can compose with it.
+ */
 export type TransformBase =
   | { readonly ok: true; readonly css: string }
   | { readonly ok: false; readonly reason: string };
@@ -62,18 +84,26 @@ export interface SiteSettings {
   readonly source: SettingsSource;
 }
 
-/** A site adapter answers: which <video>, which ancestor clips, what selector to style. */
+/**
+ * A site adapter answers: which <video>, which ancestor clips, what selector to style.
+ */
 export interface Adapter {
   readonly id: string;
   readonly label: string;
-  /** pixel readback known to be blocked */
+  /**
+   * pixel readback known to be blocked
+   */
   readonly drm: boolean;
   readonly matches: (host: string) => boolean;
-  /** selector used inside the injected stylesheet */
+  /**
+   * selector used inside the injected stylesheet
+   */
   readonly cssSelector: string;
   readonly findVideo: () => HTMLVideoElement | null;
   readonly findContainer: (v: HTMLVideoElement) => Element | null;
-  /** selector needing `overflow: hidden` because the site provides no clipper */
+  /**
+   * selector needing `overflow: hidden` because the site provides no clipper
+   */
   readonly needsClip?: string;
   readonly observeExtra?: (apply: () => void) => void;
 }

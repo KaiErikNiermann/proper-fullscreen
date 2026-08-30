@@ -6,6 +6,7 @@ import { findClippingAncestor } from '../adapters/registry.ts';
 import { canRead } from './detect.ts';
 import { classifyTransform, isWorthApplying, solve } from './geometry.ts';
 import { makeLogger } from './logger.ts';
+import { defaults } from './settings.ts';
 import type { Adapter, SiteSettings, Solution, Status } from './types.ts';
 
 const log = makeLogger('engine');
@@ -15,13 +16,28 @@ const BASE_VAR = '--pf-base';
 const SETTLE_MS = 350;    // fullscreen reports a transitional box before the window settles
 const WATCHDOG_MS = 2000; // players swap elements with no event we can rely on
 
-let adapter: Adapter | null = null;
-let video: HTMLVideoElement | null = null;
-let container: Element | null = null;
-let settings: SiteSettings;
-let observer: ResizeObserver | null = null;
-let lastSolution: Solution | null = null;
-let baseTransform = '';
+/*
+ * One player per page, so the engine is a module-scoped singleton.
+ */
+interface EngineState {
+  adapter: Adapter | null;
+  video: HTMLVideoElement | null;
+  container: Element | null;
+  settings: SiteSettings;
+  observer: ResizeObserver | null;
+  lastSolution: Solution | null;
+  baseTransform: string;
+}
+
+const state: EngineState = {
+  adapter: null,
+  video: null,
+  container: null,
+  settings: defaults(),
+  observer: null,
+  lastSolution: null,
+  baseTransform: '',
+};
 
 /**
  * Injected once and left alone. Never write the video's inline `style`: every player tested owns
@@ -31,19 +47,19 @@ let baseTransform = '';
  * The player's own transform is composed in via --pf-base, never replaced.
  */
 function ensureStyle(a: Adapter): void {
-  let el = document.getElementById(STYLE_ID);
-  if (!el) {
-    el = document.createElement('style');
-    el.id = STYLE_ID;
+  let element = document.getElementById(STYLE_ID);
+  if (!element) {
+    element = document.createElement('style');
+    element.id = STYLE_ID;
     // Safe because the content script runs at document_idle, so <head> has been parsed.
-    document.head.append(el);
+    document.head.append(element);
   }
   const extraClip = a.needsClip ? `${a.needsClip} { overflow: hidden !important; }\n` : '';
   const css = `${extraClip}${a.cssSelector} {
   transform: var(${BASE_VAR}, ) scale(var(${SCALE_VAR}, 1)) !important;
   transform-origin: 50% 50% !important;
 }`;
-  if (el.textContent !== css) el.textContent = css;
+  if (element.textContent !== css) element.textContent = css;
 }
 
 /**
@@ -51,12 +67,12 @@ function ensureStyle(a: Adapter): void {
  * restoring happen inside one synchronous task, so no frame is painted in between.
  */
 function readNativeTransform(v: HTMLVideoElement): string {
-  const el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
-  const sheet = el?.sheet ?? null;
-  const prev = sheet?.disabled ?? false;
+  const element = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  const sheet = element?.sheet ?? null;
+  const isPrevious = sheet?.disabled ?? false;
   if (sheet) sheet.disabled = true;
   const t = getComputedStyle(v).transform;
-  if (sheet) sheet.disabled = prev;
+  if (sheet) sheet.disabled = isPrevious;
   return t;
 }
 
@@ -64,69 +80,75 @@ const setScale = (s: number): void => {
   document.documentElement.style.setProperty(SCALE_VAR, s.toFixed(5));
 };
 
-/** Resolve video + container for the current page. */
-function rebind(): boolean {
-  if (!adapter) return false;
-  const v = adapter.findVideo();
-  if (!v?.videoWidth) { video = null; return false; }
-  const c = adapter.findContainer(v) ?? findClippingAncestor(v);
-  if (!c) { log.warn('no clipping container found'); video = null; return false; }
+/**
+ * Resolve video + container for the current page.
+ */
+function rebind(): void {
+  if (!state.adapter) return;
+  const v = state.adapter.findVideo();
+  if (!v?.videoWidth) { state.video = null; return; }
+  const c = state.adapter.findContainer(v) ?? findClippingAncestor(v);
+  if (!c) { log.warn('no clipping container found'); state.video = null; return; }
 
-  if (video !== v || container !== c) {
-    video = v;
-    container = c;
-    observer?.disconnect();
-    observer = new ResizeObserver(() => { apply(); });
-    observer.observe(c);
-    observer.observe(v);
+  if (state.video !== v || state.container !== c) {
+    state.video = v;
+    state.container = c;
+    state.observer?.disconnect();
+    state.observer = new ResizeObserver(() => { apply(); });
+    state.observer.observe(c);
+    state.observer.observe(v);
     log.debug('bound', c.tagName + (c.id ? `#${c.id}` : ''));
   }
-  return true;
 }
 
-/** Recompute and apply. Cheap enough to call from any observer. */
+/**
+ * Recompute and apply. Cheap enough to call from any observer.
+ */
 export function apply(): void {
-  if (!settings.enabled) { setScale(1); lastSolution = null; return; }
-  if (!rebind() || !video || !container) { setScale(1); return; }
+  if (!state.settings.enabled) { setScale(1); state.lastSolution = null; return; }
+  rebind();
+  if (!state.video || !state.container) { setScale(1); return; }
 
-  const r = container.getBoundingClientRect();
-  if (!r.width || !r.height || !video.offsetWidth) return;
+  const r = state.container.getBoundingClientRect();
+  if (!r.width || !r.height || !state.video.offsetWidth) return;
 
-  const base = classifyTransform(readNativeTransform(video), video.offsetWidth, video.offsetHeight);
+  const base = classifyTransform(readNativeTransform(state.video), state.video.offsetWidth, state.video.offsetHeight);
   if (!base.ok) {
     log.warn('player uses an unsupported transform, refusing to zoom:', base.reason);
     setScale(1);
-    lastSolution = null;
+    state.lastSolution = null;
     return;
   }
-  if (base.css !== baseTransform) {
-    baseTransform = base.css;
-    document.documentElement.style.setProperty(BASE_VAR, baseTransform);
+  if (base.css !== state.baseTransform) {
+    state.baseTransform = base.css;
+    document.documentElement.style.setProperty(BASE_VAR, state.baseTransform);
   }
 
-  lastSolution = solve({
+  state.lastSolution = solve({
     containerW: r.width,
     containerH: r.height,
-    boxW: video.offsetWidth,
-    boxH: video.offsetHeight,
-    frameAR: video.videoWidth / video.videoHeight,
-    pictureAR: settings.pictureAR,
+    boxW: state.video.offsetWidth,
+    boxH: state.video.offsetHeight,
+    frameAR: state.video.videoWidth / state.video.videoHeight,
+    pictureAR: state.settings.pictureAR,
   });
-  setScale(isWorthApplying(lastSolution) ? lastSolution.scale : 1);
+  setScale(isWorthApplying(state.lastSolution) ? state.lastSolution.scale : 1);
 }
 
 export function start(a: Adapter, initial: SiteSettings): void {
-  adapter = a;
-  settings = initial;
+  state.adapter = a;
+  state.settings = initial;
   ensureStyle(a);
 
   const applySoon = (): void => { setTimeout(apply, SETTLE_MS); };
   document.addEventListener('fullscreenchange', applySoon);
-  globalThis.addEventListener('resize', apply);
-  // A new video element appears on SPA navigation and on quality/track switches.
-  document.addEventListener('loadedmetadata', apply, true);
-  document.addEventListener('resize', apply, true);   // <video> fires this on frame-size change
-  document.addEventListener('playing', apply, true);
+  // A new <video> element appears on SPA navigation and on quality/track switches.
+  document.addEventListener('loadedmetadata', apply, { capture: true });
+  // This is HTMLVideoElement's own `resize` event (the decoded frame changed size), not a
+  // viewport resize — a ResizeObserver cannot report it.
+  // eslint-disable-next-line unicorn/prefer-observer-apis -- media element event, not layout
+  document.addEventListener('resize', apply, { capture: true });
+  document.addEventListener('playing', apply, { capture: true });
   a.observeExtra?.(apply);
 
   setInterval(apply, WATCHDOG_MS);
@@ -135,21 +157,23 @@ export function start(a: Adapter, initial: SiteSettings): void {
 }
 
 export function update(patch: Partial<SiteSettings>): Status {
-  settings = { ...settings, ...patch };
+  state.settings = { ...state.settings, ...patch };
   apply();
   return status();
 }
 
 export function status(): Status {
   return {
-    adapter: adapter ? { id: adapter.id, label: adapter.label, drm: adapter.drm } : null,
-    bound: video !== null,
-    frame: video ? { w: video.videoWidth, h: video.videoHeight, ar: video.videoWidth / video.videoHeight } : null,
-    settings,
-    solution: lastSolution,
-    baseTransform,
-    canDetect: video ? canRead(video) : false,
+    adapter: state.adapter
+      ? { id: state.adapter.id, label: state.adapter.label, drm: state.adapter.drm }
+      : null,
+    bound: state.video !== null,
+    frame: state.video ? { w: state.video.videoWidth, h: state.video.videoHeight, ar: state.video.videoWidth / state.video.videoHeight } : null,
+    settings: state.settings,
+    solution: state.lastSolution,
+    baseTransform: state.baseTransform,
+    canDetect: state.video ? canRead(state.video) : false,
   };
 }
 
-export const currentVideo = (): HTMLVideoElement | null => video;
+export const currentVideo = (): HTMLVideoElement | null => state.video;

@@ -3,7 +3,9 @@
 import { build, context } from 'esbuild';
 import { copyFile, mkdir } from 'node:fs/promises';
 
-/** Static popup assets live beside their source but ship from dist/ next to the bundle. */
+/**
+Static popup assets live beside their source but ship from dist/ next to the bundle.
+*/
 async function copyAssets() {
   await mkdir('dist', { recursive: true });
   await Promise.all([
@@ -30,8 +32,8 @@ await copyAssets();
 
 if (process.argv.includes('--watch')) {
   for (const t of targets) {
-    const ctx = await context(t);
-    await ctx.watch();
+    const context_ = await context(t);
+    await context_.watch();
   }
   console.log('watching…');
 } else {

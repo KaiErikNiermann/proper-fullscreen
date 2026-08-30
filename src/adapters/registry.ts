@@ -25,18 +25,18 @@ export function pickVideo(selector: string): HTMLVideoElement | null {
  * layout and their fullscreen element. Prime Video provides none and declares `needsClip`.
  */
 export function findClippingAncestor(v: HTMLVideoElement): Element | null {
-  let el = v.parentElement;
-  for (let i = 0; i < 10 && el; i++) {
-    const cs = getComputedStyle(el);
-    const clips = cs.overflow === 'hidden' || cs.overflow === 'clip'
+  let element = v.parentElement;
+  for (let index = 0; element && index < 10; index++) {
+    const cs = getComputedStyle(element);
+    const isClipping = cs.overflow === 'hidden' || cs.overflow === 'clip'
       || cs.overflowX === 'hidden' || cs.overflowY === 'hidden';
-    const r = el.getBoundingClientRect();
+    const r = element.getBoundingClientRect();
     // A scroll container is not a clipper. Prime Video's only overflow:hidden ancestor is <body>
     // at 4264px tall; trusting it yields a 1.61x scale that paints over the page.
-    const isScrollHost = r.height > globalThis.innerHeight * 1.5
-      || el === document.body || el === document.documentElement;
-    if (clips && !isScrollHost && r.width >= v.offsetWidth - 1 && r.height > 0) return el;
-    el = el.parentElement;
+    const isScrollHost = r.height > innerHeight * 1.5
+      || element === document.body || element === document.documentElement;
+    if (isClipping && !isScrollHost && r.width >= v.offsetWidth - 1 && r.height > 0) return element;
+    element = element.parentElement;
   }
   return null;
 }

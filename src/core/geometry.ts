@@ -21,9 +21,9 @@ export function solve(layout: Layout): Solution {
   const fitW = fitH * frameAR;
 
   // picture inside the decoded frame, before scaling
-  const letterboxed = pictureAR >= frameAR;
-  const pw0 = letterboxed ? fitW : fitH * pictureAR;
-  const ph0 = letterboxed ? fitW / pictureAR : fitH;
+  const isLetterboxed = pictureAR >= frameAR;
+  const pw0 = isLetterboxed ? fitW : fitH * pictureAR;
+  const ph0 = isLetterboxed ? fitW / pictureAR : fitH;
 
   const scaleH = containerH / ph0;
   const scaleW = containerW / pw0;
@@ -47,7 +47,9 @@ export function solve(layout: Layout): Solution {
   };
 }
 
-/** Below ~0.5% the transform costs a compositor layer for nothing. */
+/**
+ * Below ~0.5% the transform costs a compositor layer for nothing.
+ */
 export const isWorthApplying = (s: Solution): boolean => s.scale > 1.005;
 
 const NEAR = 1e-3;
@@ -72,18 +74,19 @@ export function classifyTransform(t: string, w: number, h: number): TransformBas
 
   const n = m[1].split(',').map(Number);
   if (n.length !== 6 || n.some((x) => !Number.isFinite(x))) return { ok: false, reason: t };
-  const [a, b, c, d, e, f] = n as [number, number, number, number, number, number];
+  // matrix(a, b, c, d, tx, ty) — a..d are the linear part, tx/ty the translation.
+  const [a, b, c, d, tx, ty] = n as [number, number, number, number, number, number];
 
-  const pureTranslate = Math.abs(a - 1) < NEAR && Math.abs(b) < NEAR
+  const isPureTranslate = Math.abs(a - 1) < NEAR && Math.abs(b) < NEAR
     && Math.abs(c) < NEAR && Math.abs(d - 1) < NEAR;
-  if (!pureTranslate) return { ok: false, reason: t };
+  if (!isPureTranslate) return { ok: false, reason: t };
 
-  if (Math.abs(e) < 0.5 && Math.abs(f) < 0.5) return { ok: true, css: '' };
+  if (Math.abs(tx) < 0.5 && Math.abs(ty) < 0.5) return { ok: true, css: '' };
 
   // The centring idiom: translate(-50%, -50%) expressed in px. Re-emit it as percentages so it
   // stays correct when the box is resized.
-  if (Math.abs(e + w / 2) < 1.5 && Math.abs(f + h / 2) < 1.5) {
+  if (Math.abs(tx + w / 2) < 1.5 && Math.abs(ty + h / 2) < 1.5) {
     return { ok: true, css: 'translate(-50%, -50%)' };
   }
-  return { ok: true, css: `translate(${e}px, ${f}px)` };
+  return { ok: true, css: `translate(${tx}px, ${ty}px)` };
 }
