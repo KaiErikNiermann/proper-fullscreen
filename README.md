@@ -66,12 +66,30 @@ Per-site DOM structure, measurements and gotchas are in [`docs/findings/`](docs/
 | [`50-netflix.md`](docs/findings/50-netflix.md) | The centring transform; padded vs native-AR masters |
 | [`30-aspect-presets.md`](docs/findings/30-aspect-presets.md) | The preset list and why detection snaps to it |
 
+## Releases and distribution
+
+Firefox requires **Mozilla** to sign every extension, whether it is listed on addons.mozilla.org or
+hosted here — there is no self-signing path. So a GitHub release can carry one of two things:
+
+- **unsigned `.zip`** (default) — usable via `about:debugging` → Load Temporary Add-on, or as an
+  upload to AMO. Firefox release/beta builds will not install it directly.
+- **signed `.xpi`** — produced automatically when the `AMO_JWT_ISSUER` and `AMO_JWT_SECRET`
+  repository secrets are set. The release workflow then asks AMO to sign on the *unlisted* channel
+  and attaches an installable file.
+
+Tagging `v*` runs the release workflow. Because the extension is bundled with esbuild, any AMO
+submission must include reproducible build instructions — those are in
+[`docs/BUILD.md`](docs/BUILD.md).
+
 ## Development
 
 ```sh
 pnpm check      # lint + typecheck + tests
 pnpm test       # solver regression tests
+pnpm package    # -> web-ext-artifacts/*.zip
 ```
+
+Build details and the exact toolchain versions: [`docs/BUILD.md`](docs/BUILD.md).
 
 The tests pin the solver against **real measurements** taken from the live players. If one breaks,
 it breaks a case that was verified by eye in a browser.

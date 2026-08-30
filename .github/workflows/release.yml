@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release (e.g. v0.1.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    env:
+      # Signing is skipped unless both AMO credentials are configured as repository secrets.
+      # Get them from https://addons.mozilla.org/developers/addon/api/key/
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Check
+        run: pnpm run check
+
+      - name: Build and package
+        run: pnpm run package
+
+      # Firefox refuses unsigned extensions on release/beta builds, so an unsigned .zip is only
+      # useful for about:debugging or as an AMO upload. With credentials present we ask AMO to
+      # sign it on the "unlisted" channel and get back an installable .xpi.
+      - name: Sign with AMO (unlisted)
+        if: env.AMO_JWT_ISSUER != '' && env.AMO_JWT_SECRET != ''
+        run: |
+          pnpm exec web-ext sign \
+            --channel=unlisted \
+            --api-key="$AMO_JWT_ISSUER" \
+            --api-secret="$AMO_JWT_SECRET" \
+            --source-dir=. \
+            --artifacts-dir=web-ext-artifacts
+
+      - name: Summarise artifacts
+        run: |
+          set -euo pipefail
+          ls -la web-ext-artifacts/
+          if ls web-ext-artifacts/*.xpi >/dev/null 2>&1; then
+            echo "SIGNED=true" >> "$GITHUB_ENV"
+          else
+            echo "SIGNED=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Write release notes
+        run: |
+          set -euo pipefail
+          {
+            echo "## Install"
+            echo
+            if [ "$SIGNED" = "true" ]; then
+              echo "Download the \`.xpi\` below and open it in Firefox to install."
+              echo "It is signed by Mozilla on the unlisted channel."
+            else
+              echo "This release contains an **unsigned** \`.zip\`. Firefox release and beta builds"
+              echo "refuse unsigned extensions, so it cannot be installed by double-clicking."
+              echo
+              echo "To try it: \`about:debugging\` → This Firefox → Load Temporary Add-on → pick"
+              echo "\`manifest.json\` from an unpacked copy. Temporary add-ons are removed on restart."
+              echo
+              echo "To produce an installable build, add the \`AMO_JWT_ISSUER\` and \`AMO_JWT_SECRET\`"
+              echo "repository secrets and re-run this workflow — it will return a signed \`.xpi\`."
+            fi
+            echo
+            echo "Built from \`${GITHUB_SHA}\`. Reproduce with [docs/BUILD.md](docs/BUILD.md)."
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --verify-tag \
+            web-ext-artifacts/*

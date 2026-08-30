@@ -2,8 +2,17 @@
   "name": "proper-fullscreen",
   "version": "0.1.0",
   "description": "Removes baked-in letterbox bars so scope films fill an ultrawide display.",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KaiErikNiermann/proper-fullscreen.git"
+  },
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "build": "node build.js",
     "dev": "node build.js --watch",

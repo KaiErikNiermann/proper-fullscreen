@@ -1,0 +1,31 @@
+name: Setup
+description: Node + the exact pnpm pinned by package.json, with a warm store cache.
+
+runs:
+  using: composite
+  steps:
+    # Node 24 matches the AMO reviewer environment documented in docs/BUILD.md.
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    # Corepack provisions the exact pnpm from package.json#packageManager. It must run after
+    # setup-node so the shims point at the Node we actually build with.
+    - name: Enable corepack
+      shell: bash
+      run: corepack enable
+
+    - name: Resolve pnpm store
+      id: store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@v4
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-${{ runner.os }}-
+
+    - name: Install
+      shell: bash
+      run: pnpm install --frozen-lockfile

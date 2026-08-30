@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: lint · typecheck · test · build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+
+      # Proves docs/BUILD.md actually reproduces a loadable extension.
+      - name: Verify manifest entry points exist
+        run: |
+          set -euo pipefail
+          for f in dist/content.js dist/popup.js dist/popup.html dist/popup.css icons/icon.svg; do
+            test -s "$f" || { echo "missing or empty: $f"; exit 1; }
+          done
+          echo "all manifest entry points present"
+
+      - name: Package
+        run: pnpm run package
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: proper-fullscreen-unsigned
+          path: web-ext-artifacts/*.zip
+          if-no-files-found: error

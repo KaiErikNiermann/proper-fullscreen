@@ -35,12 +35,12 @@ export default tseslint.config(
   },
   {
     // Plain build scripts are not part of the TS project; type-aware rules cannot run on them.
-    files: ['build.js', 'eslint.config.js'],
+    files: ['build.js', 'eslint.config.js', 'web-ext-config.mjs'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    files: ['test/**/*.ts', 'build.js', 'eslint.config.js'],
+    files: ['test/**/*.ts', 'build.js', 'eslint.config.js', 'web-ext-config.mjs'],
     languageOptions: { globals: { ...globals.node } },
     rules: {
       'security/detect-non-literal-fs-filename': 'off',
