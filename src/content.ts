@@ -1,4 +1,6 @@
-/* Entry point for the content script. */
+/*
+ * Entry point for the content script.
+ */
 import './adapters/youtube.ts';
 import './adapters/disneyplus.ts';
 import './adapters/netflix.ts';
@@ -46,4 +48,11 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((error: unknown) => { log.error('init failed', error); });
+// The content script ships as a classic IIFE bundle, so there is no top-level await.
+void (async () => {
+  try {
+    await main();
+  } catch (error: unknown) {
+    log.error('init failed', error);
+  }
+})();

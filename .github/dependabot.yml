@@ -13,6 +13,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # typescript-eslint 8.x declares `typescript: ">=4.8.4 <6.1.0"` and hard-errors on TS 7
+      # ("typescript-eslint does not support TS 7.0"), so lint breaks even though tsc and the
+      # build are fine. Unpin once typescript-eslint ships TS >=7.1 support.
+      # Tracking: https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      - dependency-name: typescript
+        versions: ['>=7']
 
   - package-ecosystem: github-actions
     # `directory: /` only scans .github/workflows, which silently leaves composite actions

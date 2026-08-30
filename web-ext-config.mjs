@@ -1,4 +1,6 @@
-/* Keeps the packaged artifact to just what the browser loads: manifest, dist/, icons/. */
+/*
+Keeps the packaged artifact to just what the browser loads: manifest, dist/, icons/.
+*/
 export default {
   build: { overwriteDest: true },
   ignoreFiles: [

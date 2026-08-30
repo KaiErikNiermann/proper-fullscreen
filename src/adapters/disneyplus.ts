@@ -1,4 +1,6 @@
-/* Disney+ — verified. DRM: pixel detection impossible. See docs/findings/10-disneyplus.md */
+/*
+ * Disney+ — verified. DRM: pixel detection impossible. See docs/findings/10-disneyplus.md
+ */
 import { findClippingAncestor, pickVideo, register } from './registry.ts';
 
 const SEL = 'video.btm-media-client-element';
