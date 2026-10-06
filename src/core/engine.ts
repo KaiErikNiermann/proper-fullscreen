@@ -90,15 +90,17 @@ function rebind(): void {
   const c = state.adapter.findContainer(v) ?? findClippingAncestor(v);
   if (!c) { log.warn('no clipping container found'); state.video = null; return; }
 
-  if (state.video !== v || state.container !== c) {
-    state.video = v;
-    state.container = c;
-    state.observer?.disconnect();
-    state.observer = new ResizeObserver(() => { apply(); });
-    state.observer.observe(c);
-    state.observer.observe(v);
-    log.debug('bound', c.tagName + (c.id ? `#${c.id}` : ''));
+  if (state.video === v && state.container === c) {
+    return;
   }
+
+  state.video = v;
+  state.container = c;
+  state.observer?.disconnect();
+  state.observer = new ResizeObserver(() => { apply(); });
+  state.observer.observe(c);
+  state.observer.observe(v);
+  log.debug('bound', c.tagName + (c.id ? `#${c.id}` : ''));
 }
 
 /**

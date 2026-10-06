@@ -28,6 +28,7 @@ export function nearest(ar: number): Preset {
   let bestD = Infinity;
   for (const p of PRESETS) {
     const d = Math.abs(Math.log(ar) - Math.log(p.ar));
+    // eslint-disable-next-line unicorn/prefer-continue -- `d < bestD` is false for NaN; `>=` would not be
     if (d < bestD) { bestD = d; best = p; }
   }
   return best;
