@@ -85,8 +85,5 @@ export function classifyTransform(t: string, w: number, h: number): TransformBas
 
   // The centring idiom: translate(-50%, -50%) expressed in px. Re-emit it as percentages so it
   // stays correct when the box is resized.
-  if (Math.abs(tx + w / 2) < 1.5 && Math.abs(ty + h / 2) < 1.5) {
-    return { ok: true, css: 'translate(-50%, -50%)' };
-  }
-  return { ok: true, css: `translate(${tx}px, ${ty}px)` };
+  return ({ ok: true, css: Math.abs(tx + w / 2) < 1.5 && Math.abs(ty + h / 2) < 1.5 ? 'translate(-50%, -50%)' : `translate(${tx}px, ${ty}px)` });
 }
