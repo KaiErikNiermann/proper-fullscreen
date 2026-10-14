@@ -5,13 +5,14 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
+// eslint-disable-next-line unicorn/no-top-level-side-effects -- a flat config is this call's result
 export default tseslint.config(
   { ignores: ['node_modules/**', 'dist/**', 'web-ext-artifacts/**', '.remember/**'] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   sonarjs.configs.recommended,
-  unicorn.configs['flat/recommended'],
+  unicorn.configs.recommended,
   security.configs.recommended,
   {
     languageOptions: {
@@ -27,6 +28,8 @@ export default tseslint.config(
       // Everything ships as a classic IIFE bundle; content scripts cannot be ES modules, so
       // top-level await is unavailable by construction.
       'unicorn/prefer-top-level-await': 'off',
+      // Standard JSDoc keeps the ` * ` gutter; TS and editors render it as intended.
+      'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
       'no-empty': ['error', { allowEmptyCatch: true }],
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       // Fights the idiomatic `need<HTMLInputElement>('id')` element-lookup helper.
