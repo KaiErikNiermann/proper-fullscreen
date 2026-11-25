@@ -174,7 +174,7 @@ export function status(): Status {
     settings: state.settings,
     solution: state.lastSolution,
     baseTransform: state.baseTransform,
-    canDetect: state.video ? canRead(state.video) : false,
+    canDetect: state.video !== null && canRead(state.video),
   };
 }
 

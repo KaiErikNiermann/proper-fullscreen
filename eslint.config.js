@@ -5,7 +5,6 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
-// eslint-disable-next-line unicorn/no-top-level-side-effects -- a flat config is this call's result
 export default tseslint.config(
   { ignores: ['node_modules/**', 'dist/**', 'web-ext-artifacts/**', '.remember/**'] },
   js.configs.recommended,
